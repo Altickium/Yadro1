@@ -57,11 +57,8 @@ void tape_sorting::Sorter::sort() {
         top_heap.insert(std::make_pair(read_number.value(), i));
     }
 
-    // std::cout << _temporal_tapes.size() << '\n';
     while(!top_heap.empty()) {
         auto [elem, id] = *top_heap.begin();
-        // std::cout << "ELEM : " << elem << '\n';
-        // std::cout << "ID : " << id << '\n';
         top_heap.erase(top_heap.begin());
         _output_tape->write(elem);
         _output_tape->move_next();
