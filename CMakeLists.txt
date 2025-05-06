@@ -10,5 +10,5 @@ else()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra-semi -O1 -g -fsanitize=address -fno-omit-frame-pointer")
 endif()
 
-add_executable(main main.cpp sorter/sorter.cpp tape/tape.cpp)
-add_executable(tests tests.cpp sorter/sorter.cpp tape/tape.cpp)
+add_executable(main src/main.cpp src/sorter.cpp src/tape.cpp src/config.hpp)
+add_executable(tests test/tests.cpp src/sorter.cpp src/tape.cpp src/config.hpp)

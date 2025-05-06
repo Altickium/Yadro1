@@ -3,56 +3,56 @@
 #include <fstream>
 #include <random>
 #include <chrono>
+#include <thread>
 
-#include "tape/tape.hpp"
-#include "sorter/sorter.hpp"
+#include "../src/tape.hpp"
+#include "../src/sorter.hpp"
+#include "../src/config.hpp"
 #include "simple_test.h"
-
 
 std::random_device dev;
 std::mt19937 rng(dev());
 
 void make_file(std::string output, std::vector<int32_t> vec) {
-
-    std::filesystem::path p = output;
-    std::filesystem::path mainFile = std::filesystem::current_path().remove_filename() / p;
-
-    std::ofstream out(mainFile, std::ios::binary);
+    std::ofstream out("/tmp/input", std::ios::binary | std::ios::out);
 
 	for (auto& u : vec) {
-        out.write(reinterpret_cast<char*>(&u), sizeof(int32_t));
+        out << u << ' ';
 	}
     out.close();
 }
 
 void sort_with_tape(std::string input, std::string output, size_t M) {
-    Sorter sorter(input, output, M);
+    tape_sorting::Sorter sorter(std::make_shared<tape_sorting::Tape>(input), 
+                                std::make_shared<tape_sorting::Tape>(output, tape_sorting::config(0, 0, 1000 * 1000 * 1000 + 7)), 
+                                tape_sorting::config(0, 0, M));
     sorter.sort();
 }
 
-void check_sorted(size_t n, std::vector<int32_t>& customVector, size_t M) {
-	if (customVector.size() == 0 && n != 0) {
+void check_sorted(size_t n, std::vector<int32_t>& custom_vector, size_t M) {
+	if (custom_vector.size() == 0 && n != 0) {
 		for (size_t i = 0; i<n; ++i) {
 			std::uniform_int_distribution<std::mt19937::result_type> dist6(1, n);
             int32_t val =  dist6(rng);
-            customVector.push_back(val);
+            custom_vector.push_back(val);
 		}
 	}
 
-	make_file("input", customVector);
-	std::sort(customVector.begin(), customVector.end());
-	sort_with_tape("input", "output", M);
+	make_file("input", custom_vector);
+	std::sort(custom_vector.begin(), custom_vector.end());
+	sort_with_tape("/tmp/input", "/tmp/output", M);
 
-    std::filesystem::path p = "output";
-    std::filesystem::path fullPathO = std::filesystem::current_path().remove_filename() / p;
-    std::ifstream if2(fullPathO, std::ios::binary);
+    std::ifstream if2("/tmp/output", std::ios::binary);
     for (size_t i = 0; i<n; ++i) {
         int32_t val;
-        if2.read(reinterpret_cast<char*>(&val), sizeof(int32_t));
-        EXPECT_EQ(val, customVector[i]);
+        if2 >> val;
+        EXPECT_EQ(val, custom_vector[i]);
     }
 
-    customVector.clear();
+    std::remove("/tmp/input");
+    std::remove("/tmp/output");
+    custom_vector.clear();
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
 }
 
 TEST(tape_sorter, general) {
@@ -75,18 +75,18 @@ TEST(tape_sorter, general) {
 
 TEST(tape_sorter, missing_file) {
     size_t n = 10ul, M = 5ul;
-    std::vector<int32_t> customVector(0);
-    if (customVector.size() == 0 && n != 0) {
+    std::vector<int32_t> custom_vector(0);
+    if (custom_vector.size() == 0 && n != 0) {
 		for (size_t i = 0; i<n; ++i) {
 			std::uniform_int_distribution<std::mt19937::result_type> dist6(1, n);
             int32_t val =  dist6(rng);
-            customVector.push_back(val);
+            custom_vector.push_back(val);
 		}
 	}
 
     try {
-        make_file("input1", customVector);
-        std::sort(customVector.begin(), customVector.end());
+        make_file("input1", custom_vector);
+        std::sort(custom_vector.begin(), custom_vector.end());
         sort_with_tape("input2", "output", M);
     } catch (const std::exception& e) {
         std::string msge = e.what(), msgo = "File not found or empty";
